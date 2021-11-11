@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
+<nta>
+	<declaration>clock globalTimer;
+const int NB_ETAT = 3;
+const int NB_LIVREUR_MAX = 1;
+
+
+typedef int[0, NB_LIVREUR_MAX-1] livreur_t;
+typedef int[0, NB_ETAT-1] nb_etat_t;
+bool lettres[nb_etat_t];
+int nb_livreur = NB_LIVREUR_MAX;
+
+//CHANNEL
+chan livreur_se_deplace,commence,livraison[livreur_t];
+
+//lettres_t lettres;
+int transitions[nb_etat_t][nb_etat_t];
+
+void init_transitions(int&amp; transitions[nb_etat_t][nb_etat_t]){
+    //transition dépot -&gt; maison1
+    transitions[0][1] = 3;
+    //transition maison1
+    transitions[1][0] = 3;
+    transitions[1][2] = 2;
+    //transition maison2
+    transitions[2][0] = 1;
+}
+
+
+void init_lettres(bool&amp; lettres[nb_etat_t]){
+    lettres[1] = true;
+    lettres[2] = true;
+}
+void init_(){
+    init_transitions(transitions);
+    init_lettres(lettres);
+}
+
+
+</declaration>
+	<template>
+		<name x="9" y="9">Plan</name>
+		<declaration>// Place local declarations here.
+clock x;</declaration>
+		<location id="id0" x="-204" y="0">
+			<name x="-272" y="-17">depot</name>
+		</location>
+		<location id="id1" x="170" y="0">
+			<name x="187" y="-8">maison1</name>
+		</location>
+		<location id="id2" x="170" y="102">
+			<name x="187" y="93">maison2</name>
+		</location>
+		<init ref="id0"/>
+		<transition>
+			<source ref="id2"/>
+			<target ref="id0"/>
+			<nail x="-204" y="102"/>
+		</transition>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id2"/>
+		</transition>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id0"/>
+		</transition>
+		<transition>
+			<source ref="id0"/>
+			<target ref="id1"/>
+			<label kind="guard" x="-186" y="-136">x &lt; 0</label>
+			<nail x="-204" y="-102"/>
+			<nail x="170" y="-102"/>
+		</transition>
+	</template>
+	<template>
+		<name>Tourney</name>
+		<declaration>
+bool tout_est_livre() {
+    bool res = false;
+    for(i : nb_etat_t) {
+        res = res or lettres[i];
+    }
+    return not res;
+}
+
+</declaration>
+		<location id="id3" x="0" y="0">
+			<committed/>
+		</location>
+		<location id="id4" x="136" y="0">
+			<name x="68" y="-34">livraison_en_cours</name>
+		</location>
+		<location id="id5" x="340" y="0">
+			<name x="348" y="17">finito</name>
+			<committed/>
+		</location>
+		<location id="id6" x="136" y="-204">
+			<name x="144" y="-178">epuise</name>
+			<committed/>
+		</location>
+		<init ref="id3"/>
+		<transition>
+			<source ref="id5"/>
+			<target ref="id5"/>
+			<nail x="340" y="-76"/>
+			<nail x="425" y="-76"/>
+			<nail x="425" y="0"/>
+		</transition>
+		<transition>
+			<source ref="id6"/>
+			<target ref="id6"/>
+			<nail x="85" y="-204"/>
+			<nail x="85" y="-280"/>
+			<nail x="187" y="-280"/>
+			<nail x="187" y="-204"/>
+		</transition>
+		<transition>
+			<source ref="id4"/>
+			<target ref="id6"/>
+			<label kind="guard" x="85" y="-136">nb_livreur == 0</label>
+		</transition>
+		<transition>
+			<source ref="id4"/>
+			<target ref="id5"/>
+			<label kind="guard" x="161" y="8">tout_est_livre() == true</label>
+		</transition>
+		<transition>
+			<source ref="id3"/>
+			<target ref="id4"/>
+			<label kind="assignment" x="42" y="0">init_()</label>
+		</transition>
+	</template>
+	<template>
+		<name>Livreur</name>
+		<parameter>const livreur_t id</parameter>
+		<declaration>clock x;
+
+//temps à attendre
+int time_to_wait;
+
+//commence avec 3 d'énergie
+int energie = 3;
+//commence au dépot
+int position = 0;
+
+//fonction de mouvement
+void move_to(nb_etat_t new_pos){
+    time_to_wait = transitions[position][new_pos];
+    position = new_pos;
+}</declaration>
+		<location id="id7" x="-272" y="0">
+			<name x="-297" y="17">attend</name>
+			<label kind="invariant" x="-306" y="-42">energie &gt; 0</label>
+		</location>
+		<location id="id8" x="102" y="0">
+			<name x="68" y="17">se_deplace</name>
+			<label kind="invariant" x="43" y="-34">x &lt;= time_to_wait</label>
+		</location>
+		<location id="id9" x="-442" y="0" color="#000000">
+			<name x="-459" y="17">epuise</name>
+		</location>
+		<location id="id10" x="-544" y="136" color="#ff0000">
+			<name x="-578" y="144">au_depot</name>
+			<committed/>
+		</location>
+		<location id="id11" x="-272" y="170">
+			<name x="-306" y="187">livre_lettre</name>
+		</location>
+		<init ref="id10"/>
+		<transition>
+			<source ref="id11"/>
+			<target ref="id7"/>
+			<label kind="synchronisation" x="-178" y="136">livraison[id] ?</label>
+			<label kind="assignment" x="-212" y="119">lettres[position] = false</label>
+			<nail x="-136" y="170"/>
+			<nail x="-136" y="68"/>
+		</transition>
+		<transition>
+			<source ref="id7"/>
+			<target ref="id11"/>
+			<label kind="guard" x="-340" y="76">lettres[position] == true</label>
+			<label kind="synchronisation" x="-314" y="93">livraison[id] !</label>
+		</transition>
+		<transition>
+			<source ref="id10"/>
+			<target ref="id7"/>
+			<label kind="guard" x="34" y="102">globalTimer == 0</label>
+		</transition>
+		<transition>
+			<source ref="id7"/>
+			<target ref="id9"/>
+			<label kind="guard" x="-399" y="-17">energie == 0</label>
+			<label kind="assignment" x="-399" y="0">nb_livreur--</label>
+		</transition>
+		<transition>
+			<source ref="id8"/>
+			<target ref="id7"/>
+			<label kind="guard" x="-178" y="-127">x == time_to_wait</label>
+			<nail x="102" y="-102"/>
+			<nail x="-272" y="-102"/>
+		</transition>
+		<transition>
+			<source ref="id7"/>
+			<target ref="id8"/>
+			<label kind="select" x="-144" y="-42">i : nb_etat_t</label>
+			<label kind="guard" x="-195" y="-25">transitions[position][i] != 0</label>
+			<label kind="assignment" x="-127" y="0">x = 0,
+move_to(i)</label>
+		</transition>
+	</template>
+	<template>
+		<name>Livraison</name>
+		<parameter>const livreur_t id</parameter>
+		<declaration>clock x;
+const int time_to_wait = 2;</declaration>
+		<location id="id12" x="-102" y="0">
+			<name x="-119" y="17">attend</name>
+		</location>
+		<location id="id13" x="204" y="0">
+			<name x="195" y="17">livre</name>
+			<label kind="invariant" x="153" y="-34">x &lt;= time_to_wait</label>
+		</location>
+		<init ref="id12"/>
+		<transition>
+			<source ref="id13"/>
+			<target ref="id12"/>
+			<label kind="guard" x="-25" y="-102">x == time_to_wait</label>
+			<label kind="synchronisation" x="0" y="-119">livraison[id] !</label>
+			<nail x="204" y="-102"/>
+			<nail x="-102" y="-102"/>
+		</transition>
+		<transition>
+			<source ref="id12"/>
+			<target ref="id13"/>
+			<label kind="synchronisation" x="0" y="-17">livraison[id] ?</label>
+			<label kind="assignment" x="25" y="0">x = 0</label>
+		</transition>
+	</template>
+	<system>
+
+
+system Plan,Tourney,Livraison,Livreur;</system>
+	<queries>
+		<query>
+			<formula>E&lt;&gt; Livreur(0).id == 0</formula>
+			<comment></comment>
+		</query>
+	</queries>
+</nta>
