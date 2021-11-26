@@ -2,51 +2,54 @@
 <!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
 <nta>
 	<declaration>clock globalTimer,grand_mereTimer,chienTimer;
+
 //PLAN 1
-//const int nb_lieux = 5;
+//const int lieux = 5;
 
 //PLAN 2
-const int nb_lieux = 8;
+const int lieux = 8;
 
-const int NB_LIVREUR_MAX = 2;
+const int NB_LIVREUR_MAX = 1;
 
 const int unit_temps = 60;
 const int temps_livraison_max = 1440;
 
 typedef int[0, NB_LIVREUR_MAX-1] livreur_t;
-typedef int[0, nb_lieux-1] nb_lieux_t;
+typedef int[0, lieux-1] lieux_t;
 
-bool lettres[nb_lieux_t];
-bool chiens[nb_lieux_t];
-bool grand_meres[nb_lieux_t];
+//CHANNEL
+chan livraison[livreur_t],epuise_livreur,verif_livraison;
 
-int positions_livreurs[livreur_t];
-int energies_livreurs[livreur_t];
-const int ENERGIE_MAX = 2;
-
-int nb_livreur = NB_LIVREUR_MAX;
-
+//variables plan
+int transitions[lieux_t][lieux_t];
+bool lettres[lieux_t];
+bool chiens[lieux_t];
+bool grand_meres[lieux_t];
 bool grand_mere_is_active = true;
 int time_to_wait_gm = 12 * unit_temps;
 bool chien_is_active = true;
-int time_to_wait_chien = 4 * unit_temps;
+int time_to_wait_chien = 8 * unit_temps;
+
+//variables livreurs
+const int ENERGIE_MAX = 2;
+int positions[livreur_t];
+int energies[livreur_t];
+int nb_livreur = NB_LIVREUR_MAX;
+
+
 
 
 void ajoutEnergie(livreur_t idLivreur, int nrj){
-    energies_livreurs[idLivreur] += nrj;
+    energies[idLivreur] += nrj;
 }
 
 void perteEnergie(livreur_t idLivreur, int nrj){
-    energies_livreurs[idLivreur] -= nrj;
+    energies[idLivreur] -= nrj;
 }
 
-//CHANNEL
-chan livraison[livreur_t];
 
-//lettres_t lettres;
-int transitions[nb_lieux_t][nb_lieux_t];
 
-void init_transitions(int&amp; transitions[nb_lieux_t][nb_lieux_t]){
+void init_transitions(int&amp; transitions[lieux_t][lieux_t]){
 
     /* PLAN 1
     //transition dépot
@@ -70,12 +73,12 @@ void init_transitions(int&amp; transitions[nb_lieux_t][nb_lieux_t]){
     //transitions dépot
     transitions[0][1] = 40;
     //transitions maison1
-    transitions[1][0] = 30;
+    transitions[1][0] = 40;
     transitions[1][2] = 50;
-    transitions[1][7] = 5;
+    transitions[1][7] = 30;
     //transitions maison2
-    transitions[2][0] = 10;
-    transitions[2][1] = 10;
+    transitions[2][0] = 250;
+    transitions[2][1] = 30;
     transitions[2][3] = 5;
     transitions[2][4] = 15;
     //transitions maison3
@@ -95,7 +98,7 @@ void init_transitions(int&amp; transitions[nb_lieux_t][nb_lieux_t]){
 }
 
 
-void init_lettres(bool&amp; lettres[nb_lieux_t]){
+void init_lettres(bool&amp; lettres[lieux_t]){
     //PLAN 1
 /*
     lettres[1] = true;
@@ -103,7 +106,9 @@ void init_lettres(bool&amp; lettres[nb_lieux_t]){
     lettres[3] = true;
     lettres[4] = true;
 */
+
     //PLAN 2
+
     lettres[1] = true;
     lettres[2] = true;
     lettres[3] = true;
@@ -111,9 +116,10 @@ void init_lettres(bool&amp; lettres[nb_lieux_t]){
     lettres[5] = false;
     lettres[6] = true;
     lettres[7] = true;
+
 }
 
-void init_chiens(bool&amp; chiens[nb_lieux_t]){
+void init_chiens(bool&amp; chiens[lieux_t]){
     //PLAN 1
     //chiens[4] = true;
 
@@ -123,7 +129,7 @@ void init_chiens(bool&amp; chiens[nb_lieux_t]){
     chiens[5] = true;
 }
 
-void init_grand_meres(bool&amp; grand_meres[nb_lieux_t]){
+void init_grand_meres(bool&amp; grand_meres[lieux_t]){
     //PLAN 1
     //grand_meres[3] = true;
 
@@ -138,99 +144,15 @@ void init_(){
     init_grand_meres(grand_meres);
     chienTimer = 0;
     grand_mereTimer = 0;
+
 }
 
 
 </declaration>
 	<template>
-		<name x="9" y="9">Plan</name>
-		<declaration>// Place local declarations here.
-clock x;</declaration>
-		<location id="id0" x="-204" y="0">
-			<name x="-306" y="-51">depot</name>
-		</location>
-		<location id="id1" x="170" y="0">
-			<name x="187" y="-8">maison1</name>
-		</location>
-		<location id="id2" x="170" y="102">
-			<name x="144" y="119">maison2</name>
-		</location>
-		<location id="id3" x="374" y="0">
-			<name x="364" y="-34">maison3</name>
-		</location>
-		<location id="id4" x="34" y="-204">
-			<name x="17" y="-238">maison4</name>
-		</location>
-		<init ref="id0"/>
-		<transition>
-			<source ref="id0"/>
-			<target ref="id4"/>
-			<label kind="guard" x="-399" y="-136">x &lt; 0</label>
-			<nail x="-238" y="0"/>
-			<nail x="-238" y="-204"/>
-		</transition>
-		<transition>
-			<source ref="id3"/>
-			<target ref="id2"/>
-			<nail x="374" y="34"/>
-			<nail x="374" y="102"/>
-			<nail x="195" y="102"/>
-		</transition>
-		<transition>
-			<source ref="id4"/>
-			<target ref="id1"/>
-			<nail x="34" y="-102"/>
-		</transition>
-		<transition>
-			<source ref="id4"/>
-			<target ref="id0"/>
-			<nail x="-238" y="-204"/>
-			<nail x="-238" y="0"/>
-		</transition>
-		<transition>
-			<source ref="id3"/>
-			<target ref="id4"/>
-			<nail x="374" y="-204"/>
-		</transition>
-		<transition>
-			<source ref="id2"/>
-			<target ref="id3"/>
-			<nail x="374" y="102"/>
-			<nail x="374" y="17"/>
-		</transition>
-		<transition>
-			<source ref="id2"/>
-			<target ref="id0"/>
-			<nail x="-204" y="102"/>
-		</transition>
-		<transition>
-			<source ref="id1"/>
-			<target ref="id2"/>
-		</transition>
-		<transition>
-			<source ref="id1"/>
-			<target ref="id0"/>
-		</transition>
-		<transition>
-			<source ref="id0"/>
-			<target ref="id1"/>
-			<label kind="guard" x="-399" y="-153">x &lt; 0</label>
-			<nail x="-136" y="0"/>
-			<nail x="136" y="0"/>
-		</transition>
-	</template>
-	<template>
 		<name>Tournee</name>
 		<declaration>bool tout_est_livre() {
-    bool res = false;
-    for(i : nb_lieux_t) {
-        res = res or lettres[i];
-    }
-    return not res;
-}
-
-void grand_mere_swap_state(){
-    grand_mere_is_active = not grand_mere_is_active;
+    return forall (i : lieux_t) !lettres[i];
 }
 
 int gm_guard(){
@@ -241,98 +163,151 @@ int chien_guard(){
     return time_to_wait_chien;
 }
 
+
+const int chien_dort = 2;
+const int chien_attend = 8;
 void chien_swap_state(){
     chien_is_active = not chien_is_active;
-    if(time_to_wait_chien == 2 * unit_temps){
-        time_to_wait_chien = 6 * unit_temps;
+    if(time_to_wait_chien == chien_dort * unit_temps){
+        time_to_wait_chien = chien_attend * unit_temps;
     } else {
-        time_to_wait_chien = 2 * unit_temps;
+        time_to_wait_chien = chien_dort * unit_temps;
     }
 }
 
+void grand_mere_swap_state(){
+    grand_mere_is_active = not grand_mere_is_active;
+}
+
 </declaration>
-		<location id="id5" x="0" y="0">
-			<label kind="invariant" x="-85" y="17">globalTimer &lt;= 360</label>
+		<location id="id0" x="-68" y="-170">
+			<label kind="invariant" x="-161" y="-161">globalTimer &lt;= 360</label>
 		</location>
-		<location id="id6" x="136" y="0">
-			<name x="68" y="-34">livraison_en_cours</name>
-			<label kind="invariant" x="51" y="42">(grand_mereTimer &lt;= gm_guard())
+		<location id="id1" x="68" y="-170">
+			<name x="0" y="-204">livraison_en_cours</name>
+			<label kind="invariant" x="-8" y="-136">(grand_mereTimer &lt;= gm_guard())
 and
 (chienTimer &lt;= chien_guard())
 and
-(globalTimer &lt;= temps_livraison_max)</label>
+(globalTimer &lt;= temps_livraison_max)
+and
+nb_livreur &gt; 0
+and
+not tout_est_livre()</label>
 		</location>
-		<location id="id7" x="340" y="0">
-			<name x="340" y="17">livraison_termine</name>
+		<location id="id2" x="527" y="-170">
+			<name x="527" y="-153">livraison_termine</name>
 			<committed/>
 		</location>
-		<location id="id8" x="136" y="-204">
-			<name x="144" y="-178">epuise</name>
+		<location id="id3" x="238" y="-374">
+			<name x="230" y="-348">tous_epuises</name>
 			<committed/>
 		</location>
-		<location id="id9" x="306" y="-204">
-			<name x="289" y="-187">livraison_echec</name>
+		<location id="id4" x="442" y="-374">
+			<name x="391" y="-357">livraison_echec</name>
 			<committed/>
 		</location>
-		<init ref="id5"/>
+		<location id="id5" x="442" y="-272">
+			<name x="391" y="-255">temps_ecoule</name>
+			<committed/>
+		</location>
+		<location id="id6" x="68" y="-374">
+			<name x="26" y="-348">livreur_epuise</name>
+			<committed/>
+		</location>
+		<location id="id7" x="340" y="-170">
+			<name x="246" y="-170">livreur_livre</name>
+			<committed/>
+		</location>
+		<init ref="id0"/>
 		<transition>
-			<source ref="id6"/>
-			<target ref="id9"/>
-			<label kind="guard" x="153" y="-119">temps_livraison_max == globalTimer</label>
-		</transition>
-		<transition>
-			<source ref="id9"/>
-			<target ref="id9"/>
-			<nail x="306" y="-306"/>
-			<nail x="408" y="-306"/>
-			<nail x="408" y="-204"/>
-		</transition>
-		<transition>
-			<source ref="id8"/>
-			<target ref="id9"/>
-		</transition>
-		<transition>
-			<source ref="id6"/>
-			<target ref="id6"/>
-			<label kind="guard" x="246" y="170">chienTimer == chien_guard()</label>
-			<label kind="assignment" x="272" y="195">chien_swap_state(),
-chienTimer = 0</label>
-			<nail x="340" y="102"/>
-			<nail x="340" y="238"/>
-			<nail x="170" y="238"/>
-		</transition>
-		<transition>
-			<source ref="id6"/>
-			<target ref="id6"/>
-			<label kind="guard" x="-178" y="170">grand_mereTimer == gm_guard()</label>
-			<label kind="assignment" x="-161" y="195">grand_mere_swap_state(),
-grand_mereTimer = 0</label>
-			<nail x="-68" y="102"/>
-			<nail x="-68" y="238"/>
-			<nail x="102" y="238"/>
+			<source ref="id7"/>
+			<target ref="id1"/>
+			<nail x="340" y="-238"/>
+			<nail x="170" y="-238"/>
 		</transition>
 		<transition>
 			<source ref="id7"/>
+			<target ref="id2"/>
+			<label kind="guard" x="374" y="-170">tout_est_livre()</label>
+		</transition>
+		<transition>
+			<source ref="id1"/>
 			<target ref="id7"/>
-			<nail x="340" y="-76"/>
-			<nail x="425" y="-76"/>
-			<nail x="425" y="0"/>
+			<label kind="synchronisation" x="272" y="-127">verif_livraison ?</label>
+			<nail x="340" y="-102"/>
 		</transition>
 		<transition>
 			<source ref="id6"/>
-			<target ref="id8"/>
-			<label kind="guard" x="85" y="-136">nb_livreur == 0</label>
+			<target ref="id1"/>
+			<nail x="-34" y="-374"/>
+			<nail x="-34" y="-238"/>
 		</transition>
 		<transition>
 			<source ref="id6"/>
-			<target ref="id7"/>
-			<label kind="guard" x="161" y="8">tout_est_livre() == true</label>
+			<target ref="id3"/>
+			<label kind="guard" x="102" y="-391">nb_livreur == 0</label>
+		</transition>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id6"/>
+			<label kind="synchronisation" x="34" y="-306">epuise_livreur ?</label>
+			<label kind="assignment" x="34" y="-289">nb_livreur--</label>
 		</transition>
 		<transition>
 			<source ref="id5"/>
-			<target ref="id6"/>
-			<label kind="guard" x="-85" y="-34">globalTimer == 360</label>
-			<label kind="assignment" x="42" y="0">init_()</label>
+			<target ref="id4"/>
+		</transition>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id5"/>
+			<label kind="guard" x="136" y="-272">globalTimer == temps_livraison_max</label>
+			<nail x="136" y="-272"/>
+		</transition>
+		<transition>
+			<source ref="id4"/>
+			<target ref="id4"/>
+			<nail x="442" y="-408"/>
+			<nail x="476" y="-408"/>
+			<nail x="476" y="-374"/>
+		</transition>
+		<transition>
+			<source ref="id3"/>
+			<target ref="id4"/>
+			<nail x="306" y="-374"/>
+		</transition>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id1"/>
+			<label kind="guard" x="178" y="42">chienTimer == chien_guard()</label>
+			<label kind="assignment" x="221" y="68">chien_swap_state(),
+chienTimer = 0</label>
+			<nail x="272" y="-68"/>
+			<nail x="272" y="68"/>
+			<nail x="102" y="68"/>
+		</transition>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id1"/>
+			<label kind="guard" x="-195" y="42">grand_mereTimer == gm_guard()</label>
+			<label kind="assignment" x="-195" y="68">grand_mere_swap_state(),
+grand_mereTimer = 0</label>
+			<nail x="-136" y="-68"/>
+			<nail x="-136" y="68"/>
+			<nail x="34" y="68"/>
+		</transition>
+		<transition>
+			<source ref="id2"/>
+			<target ref="id2"/>
+			<nail x="527" y="-204"/>
+			<nail x="561" y="-204"/>
+			<nail x="561" y="-170"/>
+		</transition>
+		<transition>
+			<source ref="id0"/>
+			<target ref="id1"/>
+			<label kind="guard" x="-161" y="-204">globalTimer == 360</label>
+			<label kind="assignment" x="-25" y="-170">init_()</label>
 		</transition>
 	</template>
 	<template>
@@ -351,15 +326,15 @@ bool chien_actif(){
 
 //fonction de mise à jour de la position du livreur dans les variables globales
 void maj_position(){
-    positions_livreurs[id] = position;
+    positions[id] = position;
 }
 
 void init_energie(){
-    energies_livreurs[id] = ENERGIE_MAX;
+    energies[id] = ENERGIE_MAX;
 }
 
 //fonction de mouvement
-void move_to(nb_lieux_t new_pos){
+void move_to(lieux_t new_pos){
     time_to_wait = transitions[position][new_pos];
     position = new_pos;
     maj_position();
@@ -368,78 +343,91 @@ void move_to(nb_lieux_t new_pos){
 void rencontre(){
     if(chien_actif()){
         perteEnergie(id,1);
-    }    
+    }
 }
 
 </declaration>
-		<location id="id10" x="-272" y="0">
+		<location id="id8" x="-272" y="0">
 			<name x="-297" y="17">attend</name>
-			<label kind="invariant" x="-348" y="-51">energies_livreurs[id] &gt; 0</label>
+			<label kind="invariant" x="-348" y="-59">energies[id] &gt; 0</label>
 		</location>
-		<location id="id11" x="102" y="0">
-			<name x="68" y="17">se_deplace</name>
-			<label kind="invariant" x="59" y="-68">x &lt;= time_to_wait</label>
+		<location id="id9" x="102" y="0">
+			<name x="119" y="-8">se_deplace</name>
+			<label kind="invariant" x="34" y="17">x &lt;= time_to_wait</label>
 		</location>
-		<location id="id12" x="-714" y="0" color="#000000">
-			<name x="-731" y="17">epuise</name>
+		<location id="id10" x="-612" y="0" color="#000000">
+			<name x="-680" y="-8">epuise</name>
 		</location>
-		<location id="id13" x="-544" y="0" color="#ff0000">
-			<name x="-578" y="8">au_depot</name>
+		<location id="id11" x="-544" y="0" color="#ff0000">
+			<name x="-578" y="17">au_depot</name>
 			<committed/>
 		</location>
-		<location id="id14" x="-272" y="170">
+		<location id="id12" x="-272" y="170">
 			<name x="-306" y="187">livre_lettre</name>
 		</location>
-		<init ref="id13"/>
-		<transition>
-			<source ref="id11"/>
-			<target ref="id12"/>
-			<label kind="guard" x="-442" y="-229">energies_livreurs[id] == 0</label>
-			<label kind="assignment" x="-391" y="-204">nb_livreur--</label>
-			<nail x="102" y="-204"/>
-			<nail x="-714" y="-204"/>
-		</transition>
-		<transition>
-			<source ref="id14"/>
-			<target ref="id12"/>
-			<label kind="guard" x="-696" y="204">energies_livreurs[id] == 0</label>
-			<label kind="assignment" x="-696" y="238">nb_livreur--</label>
-			<nail x="-272" y="238"/>
-			<nail x="-714" y="238"/>
-		</transition>
+		<location id="id13" x="-68" y="170">
+			<committed/>
+		</location>
+		<location id="id14" x="102" y="-102">
+			<committed/>
+		</location>
+		<init ref="id11"/>
 		<transition>
 			<source ref="id14"/>
 			<target ref="id10"/>
-			<label kind="synchronisation" x="-178" y="136">livraison[id] ?</label>
-			<label kind="assignment" x="-212" y="119">lettres[position] = false</label>
-			<nail x="-136" y="170"/>
-			<nail x="-136" y="68"/>
+			<label kind="guard" x="-425" y="-221">energies[id] == 0</label>
+			<label kind="synchronisation" x="-425" y="-204">epuise_livreur !</label>
+			<nail x="101" y="-204"/>
+			<nail x="-612" y="-204"/>
 		</transition>
 		<transition>
-			<source ref="id10"/>
+			<source ref="id14"/>
+			<target ref="id8"/>
+			<nail x="-272" y="-102"/>
+		</transition>
+		<transition>
+			<source ref="id9"/>
 			<target ref="id14"/>
-			<label kind="guard" x="-340" y="76">lettres[position] == true</label>
-			<label kind="synchronisation" x="-314" y="93">livraison[id] !</label>
+			<label kind="guard" x="51" y="-59">x == time_to_wait</label>
 		</transition>
 		<transition>
 			<source ref="id13"/>
 			<target ref="id10"/>
-			<label kind="guard" x="34" y="102">globalTimer == 0</label>
-			<label kind="assignment" x="-476" y="-17">init_energie()</label>
+			<label kind="guard" x="-594" y="204">energies[id] == 0</label>
+			<label kind="synchronisation" x="-594" y="221">epuise_livreur !</label>
+			<nail x="-68" y="238"/>
+			<nail x="-612" y="238"/>
+		</transition>
+		<transition>
+			<source ref="id13"/>
+			<target ref="id8"/>
+			<label kind="synchronisation" x="-229" y="34">verif_livraison !</label>
+			<label kind="assignment" x="-246" y="51">lettres[position] = false</label>
+			<nail x="-68" y="102"/>
+		</transition>
+		<transition>
+			<source ref="id12"/>
+			<target ref="id13"/>
+			<label kind="synchronisation" x="-229" y="153">livraison[id] ?</label>
+		</transition>
+		<transition>
+			<source ref="id8"/>
+			<target ref="id12"/>
+			<label kind="guard" x="-340" y="76">lettres[position] == true</label>
+			<label kind="synchronisation" x="-314" y="93">livraison[id] !</label>
 		</transition>
 		<transition>
 			<source ref="id11"/>
-			<target ref="id10"/>
-			<label kind="guard" x="-178" y="-127">x == time_to_wait</label>
-			<nail x="102" y="-102"/>
-			<nail x="-272" y="-102"/>
+			<target ref="id8"/>
+			<label kind="guard" x="-484" y="0">globalTimer == 0</label>
+			<label kind="assignment" x="-476" y="-17">init_energie()</label>
 		</transition>
 		<transition>
-			<source ref="id10"/>
-			<target ref="id11"/>
-			<label kind="select" x="-144" y="-42">i : nb_lieux_t</label>
+			<source ref="id8"/>
+			<target ref="id9"/>
+			<label kind="select" x="-144" y="-42">i : lieux_t</label>
 			<label kind="guard" x="-195" y="-25">transitions[position][i] != 0</label>
-			<label kind="assignment" x="-127" y="0">x = 0,
+			<label kind="assignment" x="-76" y="0">x = 0,
 move_to(i),
 rencontre()</label>
 		</transition>
@@ -457,7 +445,7 @@ const int time_to_wait_gm = unit_temps * 2;
 
 //fonction de mise à jour de la position du livreur avec les variables globales
 void maj_position(){
-    position = positions_livreurs[id];
+    position = positions[id];
 }
 
 bool grand_mere_active(){
@@ -468,92 +456,108 @@ bool chien_actif(){
     return chiens[position] and chien_is_active;
 }
 </declaration>
-		<location id="id15" x="-102" y="0">
-			<name x="-119" y="17">attend</name>
+		<location id="id15" x="119" y="102">
+			<name x="102" y="119">attend</name>
 		</location>
-		<location id="id16" x="374" y="-204">
-			<name x="391" y="-212">livre</name>
-			<label kind="invariant" x="306" y="-238">x &lt;= time_to_wait</label>
+		<location id="id16" x="595" y="-102">
+			<name x="612" y="-110">livre</name>
+			<label kind="invariant" x="527" y="-136">x &lt;= time_to_wait</label>
 		</location>
-		<location id="id17" x="204" y="0">
+		<location id="id17" x="425" y="102">
 			<committed/>
 		</location>
-		<location id="id18" x="204" y="-102">
-			<name x="187" y="-136">chien</name>
+		<location id="id18" x="425" y="0">
+			<name x="408" y="-34">chien</name>
 			<committed/>
 		</location>
-		<location id="id19" x="544" y="-102">
-			<name x="510" y="-136">grand_mere</name>
-			<label kind="invariant" x="476" y="-85">y &lt;= time_to_wait_gm</label>
+		<location id="id19" x="765" y="0">
+			<name x="731" y="-34">grand_mere</name>
+			<label kind="invariant" x="697" y="17">y &lt;= time_to_wait_gm</label>
 		</location>
 		<init ref="id15"/>
 		<transition>
 			<source ref="id17"/>
 			<target ref="id16"/>
-			<label kind="guard" x="323" y="-76">not chien_actif()
+			<label kind="guard" x="544" y="26">not chien_actif()
 and
 not grand_mere_active()</label>
-			<nail x="374" y="0"/>
+			<nail x="595" y="102"/>
 		</transition>
 		<transition>
 			<source ref="id19"/>
 			<target ref="id16"/>
-			<label kind="guard" x="382" y="-153">y == time_to_wait_gm</label>
-			<label kind="assignment" x="391" y="-170">ajoutEnergie(id,1)</label>
-			<nail x="408" y="-102"/>
+			<label kind="guard" x="612" y="-68">y == time_to_wait_gm</label>
+			<label kind="assignment" x="620" y="-51">ajoutEnergie(id,1),
+x = 0</label>
+			<nail x="629" y="0"/>
 		</transition>
 		<transition>
 			<source ref="id18"/>
 			<target ref="id16"/>
-			<label kind="assignment" x="238" y="-127">perteEnergie(id,1)</label>
-			<nail x="340" y="-102"/>
+			<label kind="assignment" x="459" y="-25">perteEnergie(id,1)</label>
+			<nail x="561" y="0"/>
 		</transition>
 		<transition>
 			<source ref="id17"/>
 			<target ref="id19"/>
-			<label kind="guard" x="222" y="68">grand_mere_active()</label>
-			<label kind="assignment" x="323" y="102">y = 0</label>
-			<nail x="204" y="102"/>
-			<nail x="544" y="102"/>
+			<label kind="guard" x="443" y="170">grand_mere_active()</label>
+			<label kind="assignment" x="544" y="204">y = 0</label>
+			<nail x="425" y="204"/>
+			<nail x="765" y="204"/>
 		</transition>
 		<transition>
 			<source ref="id17"/>
 			<target ref="id18"/>
-			<label kind="guard" x="170" y="-68">chien_actif()</label>
+			<label kind="guard" x="391" y="34">chien_actif()</label>
 		</transition>
 		<transition>
 			<source ref="id15"/>
 			<target ref="id17"/>
-			<label kind="synchronisation" x="9" y="-17">livraison[id] ?</label>
-			<label kind="assignment" x="34" y="0">x = 0,
+			<label kind="synchronisation" x="230" y="85">livraison[id] ?</label>
+			<label kind="assignment" x="255" y="102">x = 0,
 maj_position()</label>
 		</transition>
 		<transition>
 			<source ref="id16"/>
 			<target ref="id15"/>
-			<label kind="guard" x="-25" y="-204">x == time_to_wait</label>
-			<label kind="synchronisation" x="-17" y="-229">livraison[id] !</label>
-			<nail x="204" y="-204"/>
-			<nail x="-102" y="-204"/>
+			<label kind="guard" x="196" y="-102">x == time_to_wait</label>
+			<label kind="synchronisation" x="204" y="-127">livraison[id] !</label>
+			<nail x="425" y="-102"/>
+			<nail x="119" y="-102"/>
 		</transition>
 	</template>
 	<system>
 
 
 
-system Plan,Tournee,Livraison,Livreur;</system>
+system Tournee,Livraison,Livreur;</system>
 	<queries>
 		<query>
-			<formula>E&lt;&gt; (Tournee.epuise)</formula>
+			<formula>A&lt;&gt; (Tournee.livraison_termine or Tournee.livraison_echec)</formula>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>E&lt;&gt; (Tournee.livraison_termine)</formula>
+			<formula>Tournee.livraison_en_cours --&gt; (Tournee.livraison_termine or Tournee.livraison_echec)</formula>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>E&lt;&gt; (Tournee.livraison_termine and Livreur(0).position == 0)
-</formula>
+			<formula>A[] not deadlock</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A[] (Tournee.livraison_termine imply sum(i : livreur_t) energies[i] &gt; 0)</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A[] (Tournee.tous_epuises imply sum(i : livreur_t) energies[i] == 0)</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; (Tournee.livraison_termine and globalTimer &lt;= 865)</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>(E[] (sum (i : livreur_t) energies[i] ==  (NB_LIVREUR_MAX * ENERGIE_MAX)))</formula>
 			<comment></comment>
 		</query>
 	</queries>
